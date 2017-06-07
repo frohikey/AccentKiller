@@ -3,3 +3,7 @@
 ################################################################################
 
 /AccentKiller/.vs/AccentKiller/v15
+/AccentKiller/AccentKiller/bin
+/AccentKiller/AccentKiller/obj
+/AccentKiller/AccentKiller/Properties/PublishProfiles
+/AccentKiller/AccentKiller/AccentKiller.csproj.user

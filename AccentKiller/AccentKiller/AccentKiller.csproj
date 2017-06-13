@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Crc32.NET" Version="1.0.2" />
     <PackageReference Include="Microsoft.Extensions.CommandLineUtils" Version="1.1.1" />
+    <PackageReference Include="Sushi2" Version="1.0.1" />
   </ItemGroup>
 
 </Project>

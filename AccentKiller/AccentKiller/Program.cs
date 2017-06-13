@@ -1,16 +1,16 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Force.Crc32;
 using Microsoft.Extensions.CommandLineUtils;
+using Sushi2;
 
 namespace AccentKiller
 {
     public class Program
     {
-        private static bool _deleteAllDuplicateDirs = false;
-        private static bool _deleteAllDuplicateFiles = false;
+        private static bool _deleteAllDuplicateDirs;
+        private static bool _deleteAllDuplicateFiles;
 
         static void Main(params string[] args)
         {            
@@ -56,7 +56,7 @@ namespace AccentKiller
             Console.WriteLine("* " + dir);
 
             var di = new DirectoryInfo(dir);
-            var newDir = CleanCharacters(di.Name);
+            var newDir = di.Name.ToStringWithoutDiacritics();
 
             if (newDir != di.Name)
             {
@@ -102,7 +102,7 @@ namespace AccentKiller
             foreach (var file in Directory.GetFiles(dir))
             {
                 var fi = new FileInfo(file);
-                var newFile = CleanCharacters(fi.Name);
+                var newFile = fi.Name.ToStringWithoutDiacritics();
 
                 if (fi.Name != newFile)
                 {
@@ -161,26 +161,7 @@ namespace AccentKiller
             }
         }
 
-        private static bool ContainsUnicodeCharacter(string input)
-        {
-            const int maxAnsiCode = 255;
-
-            return input.Any(c => c > maxAnsiCode);
-        }
-
-        private static string CleanCharacters(string input)
-        {
-            if (!ContainsUnicodeCharacter(input))
-                return input;
-
-            var newStringBuilder = new StringBuilder();
-            newStringBuilder.Append(input.Normalize(NormalizationForm.FormKD)
-                                            .Where(x => x < 128)
-                                            .ToArray());
-            return newStringBuilder.ToString();
-        }
-
-        private static uint GetFileCrc32(FileInfo fi)
+       private static uint GetFileCrc32(FileInfo fi)
         {
             if (!fi.Exists)
                 return 0;

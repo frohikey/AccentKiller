@@ -2,12 +2,16 @@
 using System.IO;
 using System.Linq;
 using System.Text;
+using Force.Crc32;
 using Microsoft.Extensions.CommandLineUtils;
 
 namespace AccentKiller
 {
     public class Program
     {
+        private static bool _deleteAllDuplicateDirs = false;
+        private static bool _deleteAllDuplicateFiles = false;
+
         static void Main(params string[] args)
         {            
             var app = new CommandLineApplication();            
@@ -62,6 +66,31 @@ namespace AccentKiller
 
                 try
                 {
+                    var dir2 = new DirectoryInfo(dir);
+
+                    if (dir2.Exists)
+                    {
+                        if (_deleteAllDuplicateDirs)
+                        {
+                            di.Delete(true);
+                        }
+                        else
+                        {
+                            var r = Ask("Wanna remove original directory?");
+
+                            if (r == null)
+                            {
+                                r = true;
+                                _deleteAllDuplicateDirs = true;
+                            }
+
+                            if (r == true)
+                                di.Delete(true);
+                        }
+
+                        return;
+                    }
+
                     di.MoveTo(dir);
                 }
                 catch
@@ -81,11 +110,47 @@ namespace AccentKiller
 
                     try
                     {
-                        fi.MoveTo(Path.Combine(fi.DirectoryName, newFile));
+                        var newFile2 = new FileInfo(Path.Combine(fi.DirectoryName, newFile));
+
+                        if (newFile2.Exists)
+                        {
+                            var crco = GetFileCrc32(fi);
+                            var crcd = GetFileCrc32(newFile2);
+
+                            if (crco == crcd)
+                            {
+                                if (_deleteAllDuplicateFiles)
+                                {
+                                    fi.Delete();
+                                }
+                                else
+                                {
+                                    var r = Ask("Files are same. Want to delete the original?");
+
+                                    if (r == null)
+                                    {
+                                        r = true;
+                                        _deleteAllDuplicateFiles = true;
+                                    }
+
+                                    if (r == true)
+                                        fi.Delete();
+                                }
+                            }
+                            else
+                            {
+                                //Ask("Files are different!");
+                            }
+                        }
+                        else
+                        {
+                            fi.MoveTo(Path.Combine(fi.DirectoryName, newFile));
+                        }
                     }
                     catch
                     {
                         Console.WriteLine("! error renaming file");
+                        Console.ReadLine();
                     }
                 }
             }
@@ -113,6 +178,36 @@ namespace AccentKiller
                                             .Where(x => x < 128)
                                             .ToArray());
             return newStringBuilder.ToString();
-        }        
+        }
+
+        private static uint GetFileCrc32(FileInfo fi)
+        {
+            if (!fi.Exists)
+                return 0;
+
+            var bytes = File.ReadAllBytes(fi.FullName);
+            var crc1 = new Crc32Algorithm().ComputeHash(bytes);
+
+            if (BitConverter.IsLittleEndian)
+                crc1 = crc1.Reverse().ToArray();
+
+            var crc2 = BitConverter.ToUInt32(crc1, 0);
+
+            return crc2;
+        }
+
+        private static bool? Ask(string question)
+        {
+            Console.Write(question + " [Y/n/a]? ");
+            var a = Console.ReadLine();
+
+            if (a.Equals("y", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            if (a.Equals("n", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            return null;
+        }
     }
 }
